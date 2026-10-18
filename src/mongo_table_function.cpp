@@ -735,11 +735,11 @@ TableFunction GetMongoScanTableFunction() {
 	TableFunction mongo_scan("mongo_scan", {LogicalType::VARCHAR, LogicalType::VARCHAR, LogicalType::VARCHAR},
 	                         MongoScanFunction, MongoScanBind, nullptr, MongoScanInitLocal);
 
-	mongo_scan.named_parameters["filter"] = LogicalType::VARCHAR;
-	mongo_scan.named_parameters["sample_size"] = LogicalType::BIGINT;
-	mongo_scan.named_parameters["columns"] = LogicalType::ANY;
-	mongo_scan.named_parameters["pipeline"] = LogicalType::VARCHAR;
-	mongo_scan.named_parameters["schema_mode"] = LogicalType::VARCHAR;
+	MongoAddNamedParameters(mongo_scan, {{"filter", LogicalType::VARCHAR},
+	                                     {"sample_size", LogicalType::BIGINT},
+	                                     {"columns", LogicalType::ANY},
+	                                     {"pipeline", LogicalType::VARCHAR},
+	                                     {"schema_mode", LogicalType::VARCHAR}});
 
 	mongo_scan.filter_pushdown = true;
 	mongo_scan.projection_pushdown = true;
@@ -755,10 +755,10 @@ void RegisterMongoTableFunction(DatabaseInstance &db) {
 	                         MongoScanFunction, MongoScanBind, nullptr, MongoScanInitLocal);
 
 	// Add optional parameters
-	mongo_scan.named_parameters["filter"] = LogicalType::VARCHAR;
-	mongo_scan.named_parameters["sample_size"] = LogicalType::BIGINT;
-	mongo_scan.named_parameters["columns"] = LogicalType::ANY;
-	mongo_scan.named_parameters["schema_mode"] = LogicalType::VARCHAR;
+	MongoAddNamedParameters(mongo_scan, {{"filter", LogicalType::VARCHAR},
+	                                     {"sample_size", LogicalType::BIGINT},
+	                                     {"columns", LogicalType::ANY},
+	                                     {"schema_mode", LogicalType::VARCHAR}});
 
 	// Register the table function using ExtensionLoader
 	// Note: This should be called from ExtensionLoader::Load, not directly

@@ -33,8 +33,13 @@ PRAGMA tpch(${i})
 
 endloop
 
-# Run TPC-H queries 10-22
-loop i 10 22
+# Run TPC-H queries 10 and 12-22
+query I
+PRAGMA tpch(10)
+----
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf0.01/q10.csv
+
+loop i 12 22
 
 query I
 PRAGMA tpch(${i})
@@ -42,6 +47,39 @@ PRAGMA tpch(${i})
 <FILE>:duckdb/extension/tpch/dbgen/answers/sf0.01/q${i}.csv
 
 endloop
+
+# Q11's threshold depends on the scale factor (0.0001 / SF). DuckDB main's sf0.01 answer applies it, while
+# PRAGMA tpch(11) without sf=0.01 (which v1.5 lacks) uses the SF 1 threshold, so run Q11 with the SF 0.01 one.
+query II
+SELECT
+    ps_partkey,
+    sum(ps_supplycost * ps_availqty) AS value
+FROM
+    partsupp,
+    supplier,
+    nation
+WHERE
+    ps_suppkey = s_suppkey
+    AND s_nationkey = n_nationkey
+    AND n_name = 'GERMANY'
+GROUP BY
+    ps_partkey
+HAVING
+    sum(ps_supplycost * ps_availqty) > (
+        SELECT
+            sum(ps_supplycost * ps_availqty) * 0.0100000000
+        FROM
+            partsupp,
+            supplier,
+            nation
+        WHERE
+            ps_suppkey = s_suppkey
+            AND s_nationkey = n_nationkey
+            AND n_name = 'GERMANY')
+ORDER BY
+    value DESC;
+----
+1376	13271249.89
 
 # Cleanup - reset search path (test framework handles cleanup)
 statement ok
