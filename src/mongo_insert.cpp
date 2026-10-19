@@ -131,7 +131,16 @@ static void AppendValueToDocument(bsoncxx::builder::basic::document &doc_builder
 MongoTableEntry::MongoTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info,
                                  shared_ptr<MongoScanData> scan_data_p)
     : TableCatalogEntry(catalog, schema, info), scan_data(std::move(scan_data_p)) {
+#ifdef DUCKDB_MAIN_VECTOR_API
+	columns = std::move(info.columns);
+#endif
 }
+
+#ifdef DUCKDB_MAIN_VECTOR_API
+const ColumnList &MongoTableEntry::GetColumns() const {
+	return columns;
+}
+#endif
 
 unique_ptr<BaseStatistics> MongoTableEntry::GetStatistics(ClientContext &context, column_t column_id) {
 	return nullptr;

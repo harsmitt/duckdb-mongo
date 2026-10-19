@@ -122,7 +122,7 @@ public:
 		result->sql = StringUtil::Format("SELECT * FROM mongo_scan('%s', '%s', '%s')", cached_escaped_connection_string,
 		                                 cached_escaped_database_name, escaped_collection_name);
 
-		auto view_info = CreateViewInfo::FromSelect(context, std::move(result));
+		auto view_info = MongoViewInfoFromSelect(context, std::move(result));
 
 		if (mongo_catalog) {
 			mongo_catalog->CacheViewInfo(database_name, collection_name, *view_info);

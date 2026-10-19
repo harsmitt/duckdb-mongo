@@ -15,6 +15,8 @@
 #include "duckdb/parser/parsed_data/create_schema_info.hpp"
 #include "duckdb/parser/parsed_data/drop_info.hpp"
 #include "duckdb/catalog/catalog_entry.hpp"
+#include "duckdb/function/table_function.hpp"
+#include "duckdb/parser/parser.hpp"
 
 // FlatVector was moved to a separate header on DuckDB main.
 #if __has_include("duckdb/common/vector/flat_vector.hpp")
@@ -97,6 +99,33 @@ inline unique_ptr<TableFilter> MongoCopyFilter(const TableFilter &filter) {
 	return ef.Copy();
 #else
 	return filter.Copy();
+#endif
+}
+
+// Declare a table function's optional named parameters.
+// DuckDB main removed TableFunction::named_parameters; options are typed "**kwargs" on the signature.
+inline void MongoAddNamedParameters(TableFunction &function,
+                                    const vector<pair<const char *, LogicalType>> &parameters) {
+#ifdef DUCKDB_MAIN_VECTOR_API
+	function.GetSignature().WithTypedKwargs("options", [&](TypedKwargs &options) {
+		for (auto &parameter : parameters) {
+			options.Add(parameter.first, parameter.second);
+		}
+	});
+#else
+	for (auto &parameter : parameters) {
+		function.named_parameters[parameter.first] = parameter.second;
+	}
+#endif
+}
+
+// Parse a view's SELECT with the context's parser (DuckDB main's FromSelect takes a Parser instead of a context).
+inline unique_ptr<CreateViewInfo> MongoViewInfoFromSelect(ClientContext &context, unique_ptr<CreateViewInfo> info) {
+#ifdef DUCKDB_MAIN_VECTOR_API
+	Parser parser(context);
+	return CreateViewInfo::FromSelect(parser, std::move(info));
+#else
+	return CreateViewInfo::FromSelect(context, std::move(info));
 #endif
 }
 
