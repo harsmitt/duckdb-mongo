@@ -35,7 +35,14 @@ jobs:
       ci_tools_version: v2.0-cyanoptera
       extension_name: mongo
       exclude_archs: "wasm_mvp;wasm_eh;wasm_threads;windows_amd64_mingw;"
-      # Keep the existing MongoDB C++ driver / CMake compatibility pin.
+      # Smoke-test against the official DuckDB v2.0.0 CLI, not the staging CLI
+      # bundled by extension-ci-tools (which may report an alpha version).
+      post_build_command: >-
+        curl -fsSL https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-linux-amd64.tar.gz -o /tmp/duckdb-cli-v2.tar.gz &&
+        mkdir -p /tmp/duckdb-cli-v2 &&
+        tar -xzf /tmp/duckdb-cli-v2.tar.gz -C /tmp/duckdb-cli-v2 &&
+        /tmp/duckdb-cli-v2/duckdb --version &&
+        /tmp/duckdb-cli-v2/duckdb -unsigned -c "LOAD 'build/release/extension/mongo/mongo.duckdb_extension'; SELECT version(); SELECT function_name FROM duckdb_functions() WHERE function_name = 'mongo_scan';"
       vcpkg_commit: 'f74a2eade17a628413746557d04db25ccf6e76f9'
 
   duckdb-next-build:
