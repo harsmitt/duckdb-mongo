@@ -58,3 +58,5 @@ jobs:
       extension_name: mongo
       # Tidy check disabled because it requires MongoDB C++ driver (vcpkg dependency).
       format_checks: 'format'
+
+# CI trigger refresh after enabling GitHub Actions.
