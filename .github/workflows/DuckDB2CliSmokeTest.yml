@@ -1,0 +1,43 @@
+name: DuckDB 2.0 CLI Smoke Test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/DuckDB2CliSmokeTest.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  linux-amd64-cli-smoke:
+    name: Load Mongo extension in official DuckDB v2.0.0 CLI (Linux AMD64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the built Mongo extension artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 39714806073 --repo harsmitt/duckdb-mongo \
+            --name mongo-v2.0.0-extension-linux_amd64 \
+            --dir /tmp/mongo-extension
+
+      - name: Download official DuckDB v2.0.0 CLI
+        run: |
+          curl -fsSL https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-linux-amd64.tar.gz \
+            -o /tmp/duckdb-cli-v2.tar.gz
+          mkdir -p /tmp/duckdb-cli-v2
+          tar -xzf /tmp/duckdb-cli-v2.tar.gz -C /tmp/duckdb-cli-v2
+          find /tmp/duckdb-cli-v2 -maxdepth 2 -type f -name duckdb -print
+          /tmp/duckdb-cli-v2/duckdb --version
+
+      - name: Load the extension and verify registration
+        run: |
+          /tmp/duckdb-cli-v2/duckdb -unsigned -c "
+            LOAD '/tmp/mongo-extension/mongo.duckdb_extension';
+            SELECT version();
+            SELECT function_name
+            FROM duckdb_functions()
+            WHERE function_name = 'mongo_scan';
+          "
